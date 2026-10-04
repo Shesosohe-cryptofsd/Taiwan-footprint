@@ -1124,7 +1124,7 @@ function initWizardStep2Filters() {
   const favSel = document.getElementById('wFilterFav');
   if (favSel) favSel.value = 'all';
 
-  if (typeof filterWizardPhotos === 'function') filterWizardPhotos();
+  //if (typeof filterWizardPhotos === 'function') filterWizardPhotos();
 }
 
 async function filterWizardPhotos() {
