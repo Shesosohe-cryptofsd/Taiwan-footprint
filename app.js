@@ -224,8 +224,6 @@ async function confirmAndExecuteBatchDelete() {
     return;
   }
 
-  const firstConfirm = confirm(`您目前已勾選 ${count} 張照片準備刪除。\n請問是否要繼續？`);
-  if (!firstConfirm) return;
 
   const secondConfirm = confirm(`【再次確認刪除】\n刪除這 ${count} 張足跡照片嗎！\n確定立即執行刪除嗎？`);
   if (!secondConfirm) return;
