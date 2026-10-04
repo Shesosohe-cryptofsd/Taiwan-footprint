@@ -22,7 +22,7 @@ function createMarkerIcon(type = 'pin') {
 }
 
 /* ==========================================================================
-   2. Pastel Color Palette (Matched to taiwanmap_2.jpg)
+   2. Pastel Color Palette
    ========================================================================== */
 const REGION_PASTEL_COLORS = {
   '基隆市': '#f79fe0',
@@ -54,7 +54,7 @@ const REGION_PASTEL_COLORS = {
 };
 
 /* ==========================================================================
-   3. Ocean SVG Illustrations (Whale, Dolphins, Diver, Sea Turtle, Waves)
+   3. Ocean SVG Illustrations
    ========================================================================== */
 const OCEAN_SVG_ART = {
   whale:    `<img src="whale.svg" style="width:100%; height:100%; object-fit:contain;">`,
@@ -69,7 +69,7 @@ const OCEAN_SVG_ART = {
 };
 
 /* ==========================================================================
-   4. Embedded taiwan-country.topo.json (Fallback + Direct Decode)
+   4. Embedded taiwan-country.topo.json
    ========================================================================== */
 const EMBEDDED_TAIWAN_TOPOJSON = {
   "type": "Topology",
@@ -152,7 +152,10 @@ const EMBEDDED_TAIWAN_TOPOJSON = {
     [[12971,9319],[66,151],[23,137],[172,7],[26,57],[-11,74],[-70,0],[1,108],[-27,37],[29,85],[-1,81],[-34,35],[4,79],[70,78],[14,71],[-160,-45],[-59,4],[-34,43],[-3,127],[54,33],[100,-18],[23,22]],
     [[14986,3697],[-149,34],[-188,112],[-146,118],[-114,76],[-2,48],[-138,-90],[-57,115],[26,18],[60,-72],[33,23],[-94,112],[-56,14],[25,67],[-257,285],[12,57],[-62,45],[47,41],[-88,172],[8,72],[88,86],[-15,148],[-39,123],[-289,583],[-95,-15],[-49,64],[102,32],[-46,150],[-43,92],[-15,100],[-101,248]]
   ],
-  "bbox": [118.14555951500006, 21.895599675000085, 124.56017308900005, 26.38517819300006],
+  "bbox": [
+    118.14555951500006, 21.895599675000085, 124.56017308900005,
+    26.38517819300006
+  ],
   "transform": {
     "scale": [0.0001520699249442887, 0.00015500547293191455],
     "translate": [118.14555951500004, 21.895599675000085]
@@ -161,28 +164,116 @@ const EMBEDDED_TAIWAN_TOPOJSON = {
     "map": {
       "type": "GeometryCollection",
       "geometries": [
-        {"arcs":[[[0]],[[1]],[[2]],[[3]],[[4]],[[5]]],"type":"MultiPolygon","properties":{"id":"09007","name":"連江縣"}},
-        {"arcs":[[[6]],[[7]],[[8]]],"type":"MultiPolygon","properties":{"id":"09020","name":"金門縣"}},
-        {"arcs":[[[9]],[[10,11,12,13,14,15]],[[16]]],"type":"MultiPolygon","properties":{"id":"10002","name":"宜蘭縣"}},
-        {"arcs":[[17,18,19,20]],"type":"Polygon","properties":{"id":"10007","name":"彰化縣"}},
-        {"arcs":[[21,22,23,24,-19,25]],"type":"Polygon","properties":{"id":"10008","name":"南投縣"}},
-        {"arcs":[[[26]],[[27]],[[-25,28,29,-20]]],"type":"MultiPolygon","properties":{"id":"10009","name":"雲林縣"}},
-        {"arcs":[[[30]],[[31,32,33]]],"type":"MultiPolygon","properties":{"id":"10013","name":"屏東縣"}},
-        {"arcs":[[[34]],[[35]],[[36]],[[37,-32,38,39]]],"type":"MultiPolygon","properties":{"id":"10014","name":"臺東縣"}},
-        {"arcs":[[40,-40,41,-22,42,-12]],"type":"Polygon","properties":{"id":"10015","name":"花蓮縣"}},
-        {"arcs":[[[43]],[[44]],[[45]],[[46]],[[47]],[[48]]],"type":"MultiPolygon","properties":{"id":"10016","name":"澎湖縣"}},
-        {"arcs":[[49,50,51,52]],"type":"Polygon","properties":{"id":"10017","name":"基隆市"}},
-        {"arcs":[[53,54,55]],"type":"Polygon","properties":{"id":"10018","name":"新竹市"}},
-        {"arcs":[[56]],"type":"Polygon","properties":{"id":"63000","name":"臺北市"}},
-        {"arcs":[[-52,57,-50,58,-16,59,60],[-57]],"type":"Polygon","properties":{"id":"65000","name":"新北市"}},
-        {"arcs":[[-43,-26,-18,61,62,63,-13]],"type":"Polygon","properties":{"id":"66000","name":"臺中市"}},
-        {"arcs":[[64,65,66]],"type":"Polygon","properties":{"id":"67000","name":"臺南市"}},
-        {"arcs":[[-60,-15,67,68,69]],"type":"Polygon","properties":{"id":"68000","name":"桃園市"}},
-        {"arcs":[[-63,70,-54,71]],"type":"Polygon","properties":{"id":"10005","name":"苗栗縣"}},
-        {"arcs":[[-56,72,-69,-68,-14,-64,-72]],"type":"Polygon","properties":{"id":"10004","name":"新竹縣"}},
-        {"arcs":[[73]],"type":"Polygon","properties":{"id":"10020","name":"嘉義市"}},
-        {"arcs":[[-24,74,-67,75,-29],[-74]],"type":"Polygon","properties":{"id":"10010","name":"嘉義縣"}},
-        {"arcs":[[-65,-75,-23,-42,-39,-34,76]],"type":"Polygon","properties":{"id":"64000","name":"高雄市"}}
+        {
+          "arcs": [[[0]], [[1]], [[2]], [[3]], [[4]], [[5]]],
+          "type": "MultiPolygon",
+          "properties": { "id": "09007", "name": "連江縣" }
+        },
+        {
+          "arcs": [[[6]], [[7]], [[8]]],
+          "type": "MultiPolygon",
+          "properties": { "id": "09020", "name": "金門縣" }
+        },
+        {
+          "arcs": [[[9]], [[10, 11, 12, 13, 14, 15]], [[16]]],
+          "type": "MultiPolygon",
+          "properties": { "id": "10002", "name": "宜蘭縣" }
+        },
+        {
+          "arcs": [[17, 18, 19, 20]],
+          "type": "Polygon",
+          "properties": { "id": "10007", "name": "彰化縣" }
+        },
+        {
+          "arcs": [[21, 22, 23, 24, -19, 25]],
+          "type": "Polygon",
+          "properties": { "id": "10008", "name": "南投縣" }
+        },
+        {
+          "arcs": [[[26]], [[27]], [[-25, 28, 29, -20]]],
+          "type": "MultiPolygon",
+          "properties": { "id": "10009", "name": "雲林縣" }
+        },
+        {
+          "arcs": [[[30]], [[31, 32, 33]]],
+          "type": "MultiPolygon",
+          "properties": { "id": "10013", "name": "屏東縣" }
+        },
+        {
+          "arcs": [[[34]], [[35]], [[36]], [[37, -32, 38, 39]]],
+          "type": "MultiPolygon",
+          "properties": { "id": "10014", "name": "臺東縣" }
+        },
+        {
+          "arcs": [[40, -40, 41, -22, 42, -12]],
+          "type": "Polygon",
+          "properties": { "id": "10015", "name": "花蓮縣" }
+        },
+        {
+          "arcs": [[[43]], [[44]], [[45]], [[46]], [[47]], [[48]]],
+          "type": "MultiPolygon",
+          "properties": { "id": "10016", "name": "澎湖縣" }
+        },
+        {
+          "arcs": [[49, 50, 51, 52]],
+          "type": "Polygon",
+          "properties": { "id": "10017", "name": "基隆市" }
+        },
+        {
+          "arcs": [[53, 54, 55]],
+          "type": "Polygon",
+          "properties": { "id": "10018", "name": "新竹市" }
+        },
+        {
+          "arcs": [[56]],
+          "type": "Polygon",
+          "properties": { "id": "63000", "name": "臺北市" }
+        },
+        {
+          "arcs": [[-52, 57, -50, 58, -16, 59, 60], [-57]],
+          "type": "Polygon",
+          "properties": { "id": "65000", "name": "新北市" }
+        },
+        {
+          "arcs": [[-43, -26, -18, 61, 62, 63, -13]],
+          "type": "Polygon",
+          "properties": { "id": "66000", "name": "臺中市" }
+        },
+        {
+          "arcs": [[64, 65, 66]],
+          "type": "Polygon",
+          "properties": { "id": "67000", "name": "臺南市" }
+        },
+        {
+          "arcs": [[-60, -15, 67, 68, 69]],
+          "type": "Polygon",
+          "properties": { "id": "68000", "name": "桃園市" }
+        },
+        {
+          "arcs": [[-63, 70, -54, 71]],
+          "type": "Polygon",
+          "properties": { "id": "10005", "name": "苗栗縣" }
+        },
+        {
+          "arcs": [[-56, 72, -69, -68, -14, -64, -72]],
+          "type": "Polygon",
+          "properties": { "id": "10004", "name": "新竹縣" }
+        },
+        {
+          "arcs": [[73]],
+          "type": "Polygon",
+          "properties": { "id": "10020", "name": "嘉義市" }
+        },
+        {
+          "arcs": [[-24, 74, -67, 75, -29], [-74]],
+          "type": "Polygon",
+          "properties": { "id": "10010", "name": "嘉義縣" }
+        },
+        {
+          "arcs": [[-65, -75, -23, -42, -39, -34, 76]],
+          "type": "Polygon",
+          "properties": { "id": "64000", "name": "高雄市" }
+        }
       ]
     }
   }
@@ -192,6 +283,8 @@ const EMBEDDED_TAIWAN_TOPOJSON = {
    5. Pure JS TopoJSON Decoder + Sub-Island Splitter & Transformations
    ========================================================================== */
 let parsedGeoFeatures = [];
+let originalGeoFeatures = []; // 儲存真實邊界供 EXIF 解析映射
+let islandTransformMap = {};  // 儲存各離島數學轉換參數
 let regionCentersMap = {};
 let noGpsDistributionIndex = 0;
 
@@ -260,6 +353,8 @@ async function loadAndParseTopoJSON() {
   let topoData = EMBEDDED_TAIWAN_TOPOJSON;
 
   parsedGeoFeatures = [];
+  originalGeoFeatures = [];
+  islandTransformMap = {};
   regionCentersMap = {};
   const largestAreaPerRegion = {};
   const regionPolygons = {};
@@ -301,11 +396,23 @@ async function loadAndParseTopoJSON() {
   };
 
   for (const [rName, polys] of Object.entries(regionPolygons)) {
+    // 儲存全島真實邊界（含附屬島嶼）
+    polys.forEach(poly => {
+      originalGeoFeatures.push({ name: rName, rings: poly.rings });
+    });
+
     let validPolys = polys;
     
     if (MAGNIFIED_ISLANDS.includes(rName)) {
       validPolys.sort((a, b) => b.metrics.bboxArea - a.metrics.bboxArea);
-      validPolys = [validPolys[0]]; 
+      const mainIsland = validPolys[0];
+      
+      const targetCenter = ISLAND_TARGETS[rName];
+      const oldCenter = [mainIsland.metrics.centerLng, mainIsland.metrics.centerLat];
+      const scaleFactor = (rName === '金門縣') ? 1.5 : 3;
+
+      islandTransformMap[rName] = { oldCenter, newCenter: targetCenter, scale: scaleFactor };
+      validPolys = [mainIsland]; 
     }
 
     validPolys.forEach(poly => {
@@ -313,11 +420,8 @@ async function loadAndParseTopoJSON() {
       let finalMetrics = poly.metrics;
 
       if (MAGNIFIED_ISLANDS.includes(rName)) {
-        const targetCenter = ISLAND_TARGETS[rName];
-        const oldCenter = [poly.metrics.centerLng, poly.metrics.centerLat];
-        
-        const scaleFactor = (rName === '金門縣') ? 1.5 : 3;
-        finalRings = transformPolygon(poly.rings, oldCenter, targetCenter, scaleFactor);
+        const t = islandTransformMap[rName];
+        finalRings = transformPolygon(poly.rings, t.oldCenter, t.newCenter, t.scale);
         finalMetrics = computeRingMetrics(finalRings[0]);
 
         const m = finalMetrics;
@@ -384,10 +488,9 @@ function isCoordinateOnLand(lat, lng) {
   return false;
 }
 
-// 新增碰撞判定機制：確保海洋生物不會穿透虛線外框
+// 碰撞判定機制：確保海洋生物不會穿透虛線外框
 function isCoordinateColliding(lat, lng) {
   for (const feat of parsedGeoFeatures) {
-    // 移除了 if (feat.properties.isBoundingBox) continue;
     if (isPointInPolygonRings(lng, lat, feat.geometry.coordinates)) {
       return true;
     }
@@ -487,6 +590,40 @@ function getCoordsForLocationName(name, allowedRegions = null) {
     lng: pt.lng,
     resolvedName: fallbackKey
   };
+}
+
+// 將真實的 EXIF GPS 轉換為視覺地圖上的座標 (處理移位、縮放與附屬島嶼捕捉)
+function resolveRealGpsToVisualMap(realLat, realLng) {
+  for (const feat of originalGeoFeatures) {
+    if (isPointInPolygonRings(realLng, realLat, feat.rings)) {
+      const rName = feat.name;
+      if (islandTransformMap[rName]) {
+        const t = islandTransformMap[rName];
+        // 依照主島的平移與縮放比例，計算映射後的新座標
+        const tLat = (realLat - t.oldCenter[1]) * t.scale + t.newCenter[1];
+        const tLng = (realLng - t.oldCenter[0]) * t.scale + t.newCenter[0];
+
+        // 檢查映射後的新座標，是否精準落在視覺地圖有繪製出的主島陸地上
+        let onMainVisualLand = false;
+        const visualFeat = parsedGeoFeatures.find(f => f.properties.name === rName && !f.properties.isBoundingBox);
+        if (visualFeat && isPointInPolygonRings(tLng, tLat, visualFeat.geometry.coordinates)) {
+          onMainVisualLand = true;
+        }
+
+        if (onMainVisualLand) {
+          return { lat: tLat, lng: tLng, locationName: rName };
+        } else {
+          // 若原本是在附屬島嶼，放大後會落在「海上」，此時自動將其均勻捕捉到主島陸地上
+          const snapped = sampleUniformLandPointInRegion(rName);
+          return { lat: snapped.lat, lng: snapped.lng, locationName: rName };
+        }
+      }
+      // 非放大離島 (如台灣本島)，直接使用原始坐標
+      return { lat: realLat, lng: realLng, locationName: rName };
+    }
+  }
+  // 完全不在台灣版圖內的照片
+  return { lat: realLat, lng: realLng, locationName: '在海上' };
 }
 
 /* ==========================================================================
@@ -645,7 +782,6 @@ function roamStepAllCreatures() {
       const nextLat = Math.max(c.bounds.minLat, Math.min(c.bounds.maxLat, c.lat + dLat));
       const nextLng = Math.max(c.bounds.minLng, Math.min(c.bounds.maxLng, c.lng + dLng));
 
-      // 更新阻擋邏輯為 isCoordinateColliding
       if (!isCoordinateColliding(nextLat, nextLng)) {
         if (!c.isWave) {
           const innerEl = document.getElementById(`deco-inner-${c.id}`);
@@ -741,20 +877,55 @@ function dbDelete(storeName, key) {
 }
 
 /* ==========================================================================
-   9. Anti-OOM Memory-Safe Image Processing Engine
+   9. Anti-OOM Memory-Safe Image Processing Engine (With Dynamic Slicing & Debug)
    ========================================================================== */
-function extractExifFrom128KBSlice(file) {
+function extractExifFrom128KBSlice(file, sliceSize = 131072) {
   return new Promise((resolve) => {
-    const headerBlob = file.slice(0, 131072);
-    // 加入 setTimeout 防護，防止損毀圖片卡死
-    const timeoutTimer = setTimeout(() => resolve({}), 800);
+    const endBytes = Math.min(sliceSize, file.size);
+    const headerBlob = file.slice(0, endBytes);
+    const isDebug = localStorage.getItem('tw_exif_debug_mode') === 'true';
     
+    const timeoutTimer = setTimeout(() => {
+      if (isDebug) console.warn(`[EXIF Debug] 讀取超時: ${file.name}, 切片大小: ${sliceSize} bytes`);
+      resolve({});
+    }, 1500); 
+    
+    if (isDebug) console.log(`\n[EXIF Debug] 🚀 開始解析檔案: ${file.name} | 檔案總大小: ${file.size} bytes | 目前探測切片: ${sliceSize} bytes`);
+
     EXIF.getData(headerBlob, function() {
       clearTimeout(timeoutTimer);
+      
+      let allTags = {};
+      try {
+        allTags = EXIF.getAllTags(this);
+        if (isDebug) console.log(`[EXIF Debug] 📦 切片 ${sliceSize} bytes 讀取到的所有標籤:`, allTags);
+      } catch (e) {
+        if (isDebug) console.error(`[EXIF Debug] ❌ 解析標籤失敗:`, e);
+      }
+
       const dateStr = EXIF.getTag(this, "DateTimeOriginal") || EXIF.getTag(this, "DateTime");
       const latData = EXIF.getTag(this, "GPSLatitude");
       const lngData = EXIF.getTag(this, "GPSLongitude");
-      resolve({ dateStr, latData, lngData });
+
+      if (isDebug) {
+        console.log(`[EXIF Debug] 🎯 解析結果 -> 日期: ${dateStr || '無'}, Lat: ${latData ? latData.join(',') : '無'}, Lng: ${lngData ? lngData.join(',') : '無'}`);
+      }
+
+      if (!latData && endBytes < file.size) {
+        if (sliceSize === 131072) {
+          if (isDebug) console.log(`[EXIF Debug] ⚠️ 128KB 找不到 GPS，準備擴展至 512KB...`);
+          extractExifFrom128KBSlice(file, 524288).then(resolve);
+        } else if (sliceSize === 524288) {
+          if (isDebug) console.log(`[EXIF Debug] ⚠ 512KB 找不到 GPS，準備擴展至 1.5MB...`);
+          extractExifFrom128KBSlice(file, 1572864).then(resolve);
+        } else {
+          if (isDebug) console.log(`[EXIF Debug] ❌ 已達最大探測深度 1.5MB 仍無 GPS，放棄探測。`);
+          resolve({ dateStr, latData: null, lngData: null });
+        }
+      } else {
+        if (isDebug && latData) console.log(`[EXIF Debug] ✅ 成功於 ${sliceSize} bytes 切片內尋獲 GPS！`);
+        resolve({ dateStr, latData, lngData });
+      }
     });
   });
 }
@@ -863,7 +1034,8 @@ async function loadPhotosToMap() {
   const targetLayer = (markerDisplayMode === 'all') ? unclusteredLayer : clusterGroup;
 
   for (const p of allPhotoMetas) {
-    if (p.lat > 90 || p.lng < 100 || p.lng > 180) {
+    // 嚴格攔截 NaN、null 以及超出台灣範圍的無效座標
+    if (p.lat == null || p.lng == null || isNaN(p.lat) || isNaN(p.lng) || p.lat > 90 || p.lng < 100 || p.lng > 180) {
       const migrated = getCoordsForLocationName(p.location);
       p.lat = migrated.lat;
       p.lng = migrated.lng;
@@ -1190,20 +1362,32 @@ async function processSingleBatchFileMemorySafe(file, opts) {
   let lat, lng;
   let locationName = '台灣足跡';
 
-  if (opts.bKeepExif && latData && lngData) {
-    lat = latData[0] + latData[1] / 60 + latData[2] / 3600;
-    lng = lngData[0] + lngData[1] / 60 + lngData[2] / 3600;
-    locationName = detectVectorRegion(lat, lng);
-  } else if (opts.bLoc) {
-    const c = getCoordsForLocationName(opts.bLoc, opts.selectedRegions);
-    lat = c.lat;
-    lng = c.lng;
-    locationName = c.resolvedName || opts.bLoc;
-  } else {
-    const c = getCoordsForLocationName('', opts.selectedRegions);
-    lat = c.lat;
-    lng = c.lng;
-    locationName = c.resolvedName;
+  let isGpsValid = false;
+  if (opts.bKeepExif && latData && lngData && Array.isArray(latData) && Array.isArray(lngData)) {
+    const realLat = latData[0] + (latData[1] || 0) / 60 + (latData[2] || 0) / 3600;
+    const realLng = lngData[0] + (lngData[1] || 0) / 60 + (lngData[2] || 0) / 3600;
+    
+    if (!isNaN(realLat) && !isNaN(realLng)) {
+      const resolved = resolveRealGpsToVisualMap(realLat, realLng);
+      lat = resolved.lat;
+      lng = resolved.lng;
+      locationName = resolved.locationName;
+      isGpsValid = true;
+    }
+  }
+
+  if (!isGpsValid) {
+    if (opts.bLoc) {
+      const c = getCoordsForLocationName(opts.bLoc, opts.selectedRegions);
+      lat = c.lat;
+      lng = c.lng;
+      locationName = c.resolvedName || opts.bLoc;
+    } else {
+      const c = getCoordsForLocationName('', opts.selectedRegions);
+      lat = c.lat;
+      lng = c.lng;
+      locationName = c.resolvedName;
+    }
   }
 
   const { displayBlob, thumbBlob } = await decodeAndCascadeCompress(file);

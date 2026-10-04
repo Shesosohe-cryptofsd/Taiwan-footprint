@@ -1165,38 +1165,39 @@ async function cleanupDynamicReviewState() {
 }
 
 /* ==========================================================================
-   16. Settings, Default Marker Sync, Display Mode & Chunked Stream Backup
+   16. Settings, Default Marker Sync, Display Mode & Chunked Stream Backup System
    ========================================================================== */
-function ensureSettingsDisplayModeUIExists() {
-  const modal = document.getElementById('settingsModal');
-  const defaultIconSel = document.getElementById('defaultMarkerIcon');
-  if (!modal || !defaultIconSel) return;
+let isExifDebugEnabled = localStorage.getItem('tw_exif_debug_mode') === 'true';
 
-  if (!document.getElementById('markerDisplayModeSelect')) {
-    const iconGroup = defaultIconSel.closest('.form-group');
-    if (iconGroup) {
-      const modeGroup = document.createElement('div');
-      modeGroup.className = 'form-group';
-      modeGroup.innerHTML = `
-        <label>地圖地標顯示模式 (收攏為集合 / 全部顯示)</label>
-        <select id="markerDisplayModeSelect" onchange="setMarkerDisplayMode(this.value)">
-          <option value="cluster">📦 地標圖案收攏為集合 (依縮放自動聚合)</option>
-          <option value="all" selected>📍 將地標全部顯示 (預設不收攏，展開所有地標圖案)</option>
-        </select>
-      `;
-      iconGroup.insertAdjacentElement('afterend', modeGroup);
-    }
+function toggleExifDebugMode() {
+  isExifDebugEnabled = !isExifDebugEnabled;
+  localStorage.setItem('tw_exif_debug_mode', isExifDebugEnabled);
+  const statusEl = document.getElementById('exifDebugStatus');
+  if (statusEl) {
+    statusEl.innerText = isExifDebugEnabled ? '目前狀態：開啟中 (請按 F12 查看主控台)' : '目前狀態：關閉';
+    statusEl.style.color = isExifDebugEnabled ? '#e74c3c' : '#57606f';
   }
+  console.log(`[系統] EXIF 除錯模式已${isExifDebugEnabled ? '開啟' : '關閉'}`);
+}
+
+function ensureSettingsDisplayModeUIExists() {
+  // HTML 已直接更新，此處保留空函式以防報錯
 }
 
 function openSettingsModal() {
   closeMenu();
-  ensureSettingsDisplayModeUIExists();
   document.getElementById('defaultMarkerIcon').value = currentMarkerType;
   const modeSel = document.getElementById('markerDisplayModeSelect');
   if (modeSel && typeof markerDisplayMode !== 'undefined') {
     modeSel.value = markerDisplayMode;
   }
+  
+  const exifStatusEl = document.getElementById('exifDebugStatus');
+  if (exifStatusEl) {
+    exifStatusEl.innerText = isExifDebugEnabled ? '目前狀態：開啟中 (請按 F12 查看主控台)' : '目前狀態：關閉';
+    exifStatusEl.style.color = isExifDebugEnabled ? '#e74c3c' : '#57606f';
+  }
+  
   openModal('settingsModal');
 }
 

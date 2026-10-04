@@ -464,7 +464,7 @@
     </div>
   </div>
 
-  <!-- Modal: Settings & Export & Vector Label Debug -->
+<!-- Modal: Settings & Export & Vector Label Debug -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-card">
       <div class="modal-header">
@@ -485,7 +485,7 @@
       </div>
 
       <!-- 地標顯示模式 -->
-	  <div class="form-group">
+      <div class="form-group">
         <label>地圖地標顯示模式 (收攏為集合 / 全部顯示)</label>
         <select id="markerDisplayModeSelect" onchange="setMarkerDisplayMode(this.value)">
           <option value="cluster">📦 地標圖案收攏為集合 (依縮放自動聚合)</option>
@@ -500,6 +500,30 @@
           <span id="debugOverlayStatus" style="font-size: 12px; color: #666;">目前狀態：隱藏</span>
         </div>
       </div>
+
+      <!-- 新增：照片 EXIF 解析除錯模式 -->
+      <div class="form-group">
+        <label>照片 EXIF 解析除錯模式 (開發者 Console Debug Logs)</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button class="btn" style="border-color: #f1c40f;" onclick="toggleExifDebugMode()">切換 EXIF 除錯模式</button>
+          <span id="exifDebugStatus" style="font-size: 12px; font-weight: 600; color: #57606f;">目前狀態：關閉</span>
+        </div>
+      </div>
+
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid #eee;">
+      <div class="form-group">
+        <label>資料備份與還原 (低記憶體串流打包)</label>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn" id="exportBtn" style="flex: 1; justify-content: center;" onclick="exportData()">📥 匯出完整資料 (JSON)</button>
+          <button class="btn" style="flex: 1; justify-content: center;" onclick="document.getElementById('importFile').click()">📤 匯入還原資料</button>
+          <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+      </div>
+      <div style="margin-top: 22px; display: flex; justify-content: flex-end;">
+        <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" onclick="confirmSettingsModal()">確定</button>
+      </div>
+    </div>
+  </div>
       <hr style="margin: 16px 0; border: none; border-top: 1px solid #eee;">
       <div class="form-group">
         <label>資料備份與還原 (低記憶體串流打包)</label>
