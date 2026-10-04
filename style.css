@@ -918,3 +918,6 @@ body, html {
   display: block;
   user-select: none;
 }
+.dyn-trail-line {
+  vector-effect: non-scaling-stroke;
+}

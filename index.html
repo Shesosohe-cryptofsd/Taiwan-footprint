@@ -50,7 +50,7 @@
     <button class="btn" onclick="toggleMenu()">選單 ☰</button>
     <div class="dropdown-menu" id="dropdownMenu">
       <div class="menu-item" onclick="openSlideshowConfig()">📽️ 幻燈片輪播</div>
-      <div class="menu-item" id="menuItemDynamicReview" onclick="openDynamicReviewConfig()">🧭 行動態回顧</div>
+      <div class="menu-item" id="menuItemDynamicReview" onclick="openDynamicReviewConfig()">🧭 旅行動態回顧</div>
       <div class="menu-item" onclick="openGameConfig('casual')">🎮 猜謎小遊戲 (休閒)</div>
       <div class="menu-item" onclick="openGameConfig('challenge')">⚡ 猜謎小遊戲 (挑戰)</div>
       <div class="menu-item" onclick="openCustomGameManager()">✏️ 自訂小遊戲</div>
@@ -91,7 +91,7 @@
       </div>
       <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
         <label>
-          <input type="checkbox" id="batchKeepExif" checked> 若照片內已有 EXIF 資訊時優先保留 (128KB 切片極速讀取)
+          <input type="checkbox" id="batchKeepExif" checked> 若照片內已有地區資訊(EXIF)訊時優先保留
         </label>
         <label>
           <input type="checkbox" id="batchFavorite"> 統一設為最愛照片 ❤️
@@ -231,7 +231,7 @@
   <div class="modal-overlay" id="dynamicReviewConfigModal">
     <div class="modal-card tall-modal" style="max-width: 880px;">
       <div class="modal-header">
-        <h3>🧭 行動態回顧設定</h3>
+        <h3>🧭 旅行動態回顧設定</h3>
         <button class="close-btn" onclick="closeDynamicReviewConfig()">&times;</button>
       </div>
 

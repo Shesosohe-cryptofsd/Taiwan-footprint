@@ -1076,7 +1076,7 @@ async function animateCurvedArrowTransition(fromPhoto, toPhoto) {
   const ctrlLat = midLat + arcSpan * 0.85;
   const ctrlLng = midLng + (dLat >= 0 ? -arcSpan * 0.22 : arcSpan * 0.22);
 
-  const trailLine = L.polyline([[lat1, lng1]], { color: '#111111', weight: 3.5, opacity: 0.6, lineCap: 'round', lineJoin: 'round' }).addTo(dynReviewLayer);
+  const trailLine = L.polyline([[lat1, lng1]], { color: '#111111', weight: 3.5, opacity: 0.6, lineCap: 'round', lineJoin: 'round' ,className: 'dyn-trail-line'}).addTo(dynReviewLayer);
   const arrowMarker = L.marker([lat1, lng1], { icon: createDynamicArrowHeadIcon(0), zIndexOffset: 2000, interactive: false }).addTo(dynReviewLayer);
 
   const duration = isSameRegion ? Math.min(1900, Math.max(1200, dist * 4500)) : Math.min(2400, Math.max(1600, dist * 1300));
