@@ -57,10 +57,10 @@ const REGION_PASTEL_COLORS = {
    3. Ocean SVG Illustrations
    ========================================================================== */
 const OCEAN_SVG_ART = {
-  whale:    `<img src="whale.svg" style="width:100%; height:100%; object-fit:contain;">`,
-  dolphins: `<img src="dolphins.svg" style="width:100%; height:100%; object-fit:contain;">`,
-  diver:    `<img src="diver.svg" style="width:100%; height:100%; object-fit:contain;">`,
-  turtle:   `<img src="turtle.svg" style="width:100%; height:100%; object-fit:contain;">`,
+  whale:    `<img src="whale.svg" style="width:60%; height:60%; object-fit:contain;">`,
+  dolphins: `<img src="dolphins.svg" style="width:60%; height:60%; object-fit:contain;">`,
+  diver:    `<img src="diver.svg" style="width:60%; height:60%; object-fit:contain;">`,
+  turtle:   `<img src="turtle.svg" style="width:60%; height:60%; object-fit:contain;">`,
   wave: `
     <svg viewBox="0 0 90 32" width="72" height="26">
       <path d="M6 14 Q16 4 26 14 Q36 4 46 14 Q56 4 66 14" stroke="#2d767f" stroke-width="2.8" fill="none" stroke-linecap="round"/>
