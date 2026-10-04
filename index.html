@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>台灣足跡地圖</title>
+  
+  <!-- Leaflet & Cluster CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- External Libraries -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exif-js"></script>
+</head>
+<body>
+
+  <!-- 隱藏式 SVG 濾鏡：供「模式 11：素描線稿化（邊緣偵測）」硬體加速使用，零記憶體負擔 -->
+  <svg style="position: absolute; width: 0; height: 0; pointer-events: none;" aria-hidden="true">
+    <defs>
+      <filter id="sketchEdgeFilter">
+        <feColorMatrix type="saturate" values="0" result="gray" />
+        <feConvolveMatrix order="3 3" kernelMatrix="-1 -1 -1 -1 8 -1 -1 -1 -1" divisor="1" bias="0" in="gray" result="edges" />
+        <feComponentTransfer in="edges">
+          <feFuncR type="linear" slope="-2.5" intercept="1" />
+          <feFuncG type="linear" slope="-2.5" intercept="1" />
+          <feFuncB type="linear" slope="-2.5" intercept="1" />
+        </feComponentTransfer>
+      </filter>
+    </defs>
+  </svg>
+
+  <div id="map"></div>
+
+  <!-- Bottom-Left Live Vector Hitbox Sensor Badge -->
+  <div class="sensor-badge" id="sensorBadge">
+    <span class="color-swatch" id="sensorSwatch"></span>
+    <span id="sensorText">TopoJSON 向量定位就緒（共 26 區）</span>
+  </div>
+
+  <!-- Top Right Navigation -->
+  <div class="top-nav">
+    <button class="btn btn-primary" onclick="document.getElementById('photoInput').click()">📷 上傳照片</button>
+    <input type="file" id="photoInput" multiple accept="image/*" style="display: none;">
+    <button class="btn" onclick="toggleMenu()">選單 ☰</button>
+    <div class="dropdown-menu" id="dropdownMenu">
+      <div class="menu-item" onclick="openSlideshowConfig()">📽️ 幻燈片輪播</div>
+      <div class="menu-item" id="menuItemDynamicReview" onclick="openDynamicReviewConfig()">🧭 行動態回顧</div>
+      <div class="menu-item" onclick="openGameConfig('casual')">🎮 猜謎小遊戲 (休閒)</div>
+      <div class="menu-item" onclick="openGameConfig('challenge')">⚡ 猜謎小遊戲 (挑戰)</div>
+      <div class="menu-item" onclick="openCustomGameManager()">✏️ 自訂小遊戲</div>
+      <div class="menu-item danger-item" onclick="openBatchDeleteModal()">🗑️ 批次刪除照片</div>
+      <div class="menu-item" onclick="openSettingsModal()">⚙️ 系統設定與檢視</div>
+    </div>
+  </div>
+
+  <!-- Modal: Batch Upload Settings (With Memory-Safe Progress UI) -->
+  <div class="modal-overlay" id="batchUploadModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>照片批次設定 (<span id="batchCountLabel">0</span> 張)</h3>
+        <button class="close-btn" id="batchCloseBtn" onclick="closeModal('batchUploadModal')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>統一指定地點名稱 (若留空則依 EXIF GPS 真實經緯度定位，無 GPS 將均勻分散至 25 區)</label>
+        <input type="text" id="batchLocation" placeholder="留空 或 輸入如：臺中市、小琉球、綠島、澎湖縣">
+      </div>
+      <div class="form-group" style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <label>統一指定年份 (留空則保留照片原年份)</label>
+          <input type="number" id="batchYear" min="1950" max="2050" placeholder="2026">
+        </div>
+        <div style="flex: 1;">
+          <label>統一指定月份 (留空則保留照片原月份)</label>
+          <input type="number" id="batchMonth" min="1" max="12" placeholder="1~12">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>統一地標符號 (預設自動帶入系統設定風格)</label>
+        <select id="batchMarkerType">
+          <option value="pin">紅色圓頭圖釘</option>
+          <option value="flag">紅色三角旗幟</option>
+          <option value="landmark">紅色地標符號</option>
+          <option value="heart">紅色愛心符號</option>
+        </select>
+      </div>
+      <div class="form-group" style="display: flex; flex-direction: column; gap: 8px;">
+        <label>
+          <input type="checkbox" id="batchKeepExif" checked> 若照片內已有 EXIF 資訊時優先保留 (128KB 切片極速讀取)
+        </label>
+        <label>
+          <input type="checkbox" id="batchFavorite"> 統一設為最愛照片 ❤️
+        </label>
+      </div>
+
+      <!-- Memory-Safe Progress Indicator -->
+      <div class="upload-progress-box" id="uploadProgressBox">
+        <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--primary);">
+          <span id="uploadProgressText">正在處理第 1 / 1 張...</span>
+          <span id="uploadProgressPercent">0%</span>
+        </div>
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="uploadProgressBar"></div>
+        </div>
+        <div style="font-size: 11px; color: #57606f;" id="uploadMemoryHint">
+          🛡️ 低記憶體防護運作中：128KB EXIF 切片 ＋ 單次解碼階梯縮圖 ＋ 畫布緩衝即時回收
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="batchStartBtn" style="width: 100%; justify-content: center; margin-top: 14px;" onclick="processPendingBatch()">開始匯入並處理照片</button>
+    </div>
+  </div>
+
+  <!-- Modal: Batch Delete Photos (Full Height 96vh) -->
+  <div class="modal-overlay" id="batchDeleteModal">
+    <div class="modal-card tall-modal" style="max-width: 980px;">
+      <div class="modal-header">
+        <h3 style="color: var(--accent);">🗑️ 批次刪除照片管理 (依區域 / 依時間篩選)</h3>
+        <button class="close-btn" onclick="closeBatchDeleteModal()">&times;</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; flex-shrink: 0;">
+        <button type="button" id="btnDelRegion" class="btn" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc; justify-content: space-between;" onclick="openSharedMsModal('del', 'region')">全部地區 ▼</button>
+        <button type="button" id="btnDelYear" class="btn" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc; justify-content: space-between;" onclick="openSharedMsModal('del', 'year')">全部年份 ▼</button>
+        <button type="button" id="btnDelMonth" class="btn" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc; justify-content: space-between;" onclick="openSharedMsModal('del', 'month')">全部月份 ▼</button>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-bottom: 10px; align-items: center; flex-shrink: 0;">
+        <button class="btn" style="padding: 6px 14px; font-size: 13px;" onclick="batchDeleteSelectAll(true)">✓ 勾選全部</button>
+        <button class="btn" style="padding: 6px 14px; font-size: 13px;" onclick="batchDeleteSelectAll(false)">✗ 取消全部勾選</button>
+        <span id="batchDeleteSelectedCount" style="font-size: 14px; font-weight: bold; color: var(--accent); margin-left: 6px;">已勾選 0 張</span>
+      </div>
+
+      <div id="batchDeleteList" class="tall-scroll-area" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); grid-auto-rows: max-content; gap: 10px;"></div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 14px; flex-shrink: 0;">
+        <button class="btn" onclick="closeBatchDeleteModal()">取消返回</button>
+        <button class="btn btn-danger" onclick="confirmAndExecuteBatchDelete()">🗑️ 刪除已勾選照片</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Single Photo Info -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>編輯照片足跡紀錄</h3>
+        <button class="close-btn" onclick="closeModal('editModal')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>地點名稱 (拖曳圖釘時經由 TopoJSON 向量邊界自動改寫)</label>
+        <input type="text" id="editLocation">
+      </div>
+      <div class="form-group" style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <label>年份</label>
+          <input type="number" id="editYear" min="1950" max="2050">
+        </div>
+        <div style="flex: 1;">
+          <label>月份</label>
+          <input type="number" id="editMonth" min="1" max="12">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>標記圖示</label>
+        <select id="editMarkerType">
+          <option value="pin">紅色圓頭圖釘</option>
+          <option value="flag">紅色三角旗幟</option>
+          <option value="landmark">紅色地標符號</option>
+          <option value="heart">紅色愛心符號</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="editFavorite"> 設為最愛照片 ❤️
+        </label>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+        <button class="btn btn-danger" onclick="deleteCurrentPhoto()">刪除此紀錄</button>
+        <button class="btn btn-primary" onclick="savePhotoEdit()">儲存變更</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Slideshow Config -->
+  <div class="modal-overlay" id="slideConfigModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>幻燈片輪播設定</h3>
+        <button class="close-btn" onclick="closeModal('slideConfigModal')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>照片範圍</label>
+        <select id="slideScope">
+          <option value="all">全部照片</option>
+          <option value="fav">僅播放最愛照片 ❤️</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>指定地區 (可複選)</label>
+        <button type="button" id="btnSlideRegion" class="btn" style="width:100%; justify-content:space-between;" onclick="openSharedMsModal('slide', 'region')">全部地區 ▼</button>
+      </div>
+      <div class="form-group" style="display: flex; gap: 10px;">
+        <div style="flex: 1;">
+          <label>指定時間 - 年份 (可複選)</label>
+          <button type="button" id="btnSlideYear" class="btn" style="width:100%; justify-content:space-between;" onclick="openSharedMsModal('slide', 'year')">全部年份 ▼</button>
+        </div>
+        <div style="flex: 1;">
+          <label>指定時間 - 月份 (可複選)</label>
+          <button type="button" id="btnSlideMonth" class="btn" style="width:100%; justify-content:space-between;" onclick="openSharedMsModal('slide', 'month')">全部月份 ▼</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>播放順序</label>
+        <select id="slideOrder">
+          <option value="time">依照時間排序 (早到晚)</option>
+          <option value="region">依照地區排序</option>
+          <option value="random">隨機播放</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 10px;" onclick="startSlideshow()">開始輪播</button>
+    </div>
+  </div>
+
+  <!-- Modal: Dynamic Action Review Config (行動態回顧設定) -->
+  <div class="modal-overlay" id="dynamicReviewConfigModal">
+    <div class="modal-card tall-modal" style="max-width: 880px;">
+      <div class="modal-header">
+        <h3>🧭 行動態回顧設定</h3>
+        <button class="close-btn" onclick="closeDynamicReviewConfig()">&times;</button>
+      </div>
+
+      <!-- 步驟 1：指定地區與時間篩選 -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
+        <div style="position: relative;">
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">1. 指定地區 (可複選)</label>
+          <button type="button" id="btnDynRegion" class="btn" style="width:100%; text-align:left; justify-content:space-between; padding:8px; border-radius:6px; border:1px solid #ced6e0; font-size: 13px;" onclick="openSharedMsModal('dyn', 'region')">全部地區 ▼</button>
+        </div>
+        <div style="position: relative;">
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">2. 指定年份 (可複選)</label>
+          <button type="button" id="btnDynYear" class="btn" style="width:100%; text-align:left; justify-content:space-between; padding:8px; border-radius:6px; border:1px solid #ced6e0; font-size: 13px;" onclick="openSharedMsModal('dyn', 'year')">全部年份 ▼</button>
+        </div>
+        <div style="position: relative;">
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">3. 指定月份 (可複選)</label>
+          <button type="button" id="btnDynMonth" class="btn" style="width:100%; text-align:left; justify-content:space-between; padding:8px; border-radius:6px; border:1px solid #ced6e0; font-size: 13px;" onclick="openSharedMsModal('dyn', 'month')">全部月份 ▼</button>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">4. 照片範圍</label>
+          <select id="dynScope" onchange="onDynamicFilterChange()" style="width:100%; padding:8px; border-radius:6px; border:1px solid #ced6e0; font-size: 13px;">
+            <option value="all">全部符合照片</option>
+            <option value="fav">僅最愛照片 ❤</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 步驟 2：輸入開始與結束文字及狀態總覽 -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: #f1f8f7; padding: 10px 14px; border-radius: 8px; border: 1px solid #b8e0dd; margin-bottom: 10px; flex-shrink: 0;">
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#27ae60; display:block; margin-bottom:4px;">🚩 開場顯示文字 (最多 50 字)</label>
+          <input type="text" id="dynStartTextInput" maxlength="50" placeholder="Ready~GO出發" style="width:100%; padding:7px; border-radius:6px; border:1px solid #2ecc71;">
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:800; color:#c0392b; display:block; margin-bottom:4px;">🏁 結束顯示文字 (最多 50 字)</label>
+          <input type="text" id="dynEndTextInput" maxlength="50" placeholder="End" style="width:100%; padding:7px; border-radius:6px; border:1px solid #e74c3c;">
+        </div>
+        <div style="grid-column: 1 / -1; text-align: center; margin-top: 6px;">
+          <div id="dynRangeSummary" style="font-size: 14px; font-weight: 800; color: var(--primary);">共播放 0 張照片</div>
+        </div>
+      </div>
+
+      <!-- 箭頭圖片設定 -->
+      <div id="dynArrowSettingBar" style="display: flex; gap: 12px; background: #fff9eb; padding: 8px 14px; border-radius: 8px; border: 1px solid #f3d19e; margin-bottom: 10px; flex-wrap: wrap; align-items: center; justify-content: space-between; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+          <span style="font-size: 12px; font-weight: 800; color: #b7791f;">🖼️ 箭頭最前端圖片設定 (arrow.png)：</span>
+          <button type="button" class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="document.getElementById('dynArrowFileInput').click()">📤 替換箭頭</button>
+          <button type="button" class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="resetDynArrowToDefaultSvg()">↩ 恢復預設箭頭符號</button>
+          <input type="file" id="dynArrowFileInput" accept=".png,image/png,image/*" style="display: none;" onchange="handleDynArrowFileUploadAndSave(event)">
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span id="dynArrowStatusText" style="font-size: 11px; font-weight: 600; color: #57606f;">目前：預設箭頭符號</span>
+          <div id="dynArrowPreviewBox" style="width: 32px; height: 32px; border-radius: 6px; border: 1px solid #dcdde1; background: #ffffff; display: flex; align-items: center; justify-content: center; overflow: hidden;" title="箭頭前端預覽"></div>
+        </div>
+      </div>
+
+      <!-- 縮圖預覽清單 -->
+      <div id="dynPhotoPreviewGrid" class="tall-scroll-area" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); grid-auto-rows: max-content; gap: 10px;"></div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 12px; flex-shrink: 0;">
+        <button class="btn" onclick="closeDynamicReviewConfig()">取消返回</button>
+        <button class="btn btn-primary" id="dynStartPlayBtn" onclick="startDynamicReviewPlayback()">🚀 開始行動態回顧</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Game Launcher Config -->
+  <div class="modal-overlay" id="gameConfigModal">
+    <div class="modal-card tall-modal" style="max-width: 900px;">
+      <div class="modal-header">
+        <h3 id="gameModalTitle">小遊戲設定</h3>
+        <button class="close-btn" onclick="closeGameConfigModal()">&times;</button>
+      </div>
+
+      <!-- 1. 區域、年份、月份、最愛 篩選器 -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 10px; flex-shrink: 0;">
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">1. 篩選地區 (可複選)</label>
+          <button type="button" id="btnGameRegion" class="btn" style="width:100%; justify-content:space-between; padding:7px; border-radius:6px; border:1px solid #ced6e0;" onclick="openSharedMsModal('game', 'region')">全部地區 ▼</button>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">2. 篩選年份 (可複選)</label>
+          <button type="button" id="btnGameYear" class="btn" style="width:100%; justify-content:space-between; padding:7px; border-radius:6px; border:1px solid #ced6e0;" onclick="openSharedMsModal('game', 'year')">全部年份 ▼</button>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">3. 篩選月份 (可複選)</label>
+          <button type="button" id="btnGameMonth" class="btn" style="width:100%; justify-content:space-between; padding:7px; border-radius:6px; border:1px solid #ced6e0;" onclick="openSharedMsModal('game', 'month')">全部月份 ▼</button>
+        </div>
+        <div>
+          <label style="font-size:12px; font-weight:700; color:#57606f; display:block; margin-bottom:4px;">4. 最愛篩選</label>
+          <select id="gameFilterFav" onchange="onGameFilterChange()" style="width:100%; padding:7px; border-radius:6px; border:1px solid #ced6e0;">
+            <option value="all">全部照片</option>
+            <option value="fav">僅最愛照片 ❤️</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- 2. 照片即時預覽控制列 -->
+      <div style="display: flex; gap: 10px; margin-bottom: 8px; align-items: center; justify-content: space-between; flex-wrap: wrap; flex-shrink: 0; background: #f1f8f7; padding: 8px 12px; border-radius: 8px; border: 1px solid #b8e0dd;">
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button type="button" class="btn" style="padding: 5px 12px; font-size: 12px;" onclick="gameSelectAllPhotos(true)">✓ 全部勾選</button>
+          <button type="button" class="btn" style="padding: 5px 12px; font-size: 12px;" onclick="gameSelectAllPhotos(false)">✗ 全部取消勾選</button>
+          <span id="gameSelectedPhotoCount" style="font-size: 13px; font-weight: 800; color: var(--primary); margin-left: 4px;">已勾選 0 張作為題庫</span>
+        </div>
+        <span style="font-size: 11px; color: #57606f;">(點擊下方照片可單獨勾選 / 取消勾選)</span>
+      </div>
+
+      <!-- 3. 照片即時預覽網格 -->
+      <div id="gamePhotoPreviewGrid" class="tall-scroll-area" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); grid-auto-rows: max-content; gap: 10px; margin-bottom: 10px;"></div>
+
+      <!-- 4. 左右拉動捲軸與模式選單 -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; flex-shrink: 0; align-items: end;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label id="gameQuestionCountLabel">題目數量 (左右拉動捲軸或點擊快捷鍵)</label>
+          <div class="slider-control-wrap">
+            <input type="range" id="gameQuestionSlider" min="1" max="50" value="10" oninput="syncGameQuestionCount('slider')">
+            <input type="number" id="gameQuestionCount" min="1" max="50" value="10" oninput="syncGameQuestionCount('number')">
+          </div>
+          <div class="quick-count-btns">
+            <button type="button" onclick="setQuickQuestionCount('default')">預設題數 (10)</button>
+            <button type="button" onclick="setQuickQuestionCount('half')">半數 (50%)</button>
+            <button type="button" onclick="setQuickQuestionCount('max')">全部已勾選照片 (Max)</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 0;">
+          <label>題型呈現方式 (共 9 種視覺與解謎特效)</label>
+          <select id="gameModeSelection">
+            <option value="all">🎲 全部 9 種模式隨機輪播 (1~9)</option>
+            <option value="1">模式 1：原圖提問</option>
+            <option value="2">模式 2：九宮格遮蔽</option>
+            <option value="3">模式 3：刮刮樂除污</option>
+            <option value="4">模式 4：手電筒夜視（暗房探照）</option>
+            <option value="5">模式 5：鏡像萬花筒（空間顛倒）</option>
+            <option value="6">模式 6：負片／老照片褪色（色彩干擾）</option>
+            <option value="7">模式 7：8-Bit 像素馬賽克（動態解析）</option>
+            <option value="8">模式 8：滑塊拼圖／九宮格錯位（可點擊交換）</option>
+            <option value="9">模式 9：素描線稿化（邊緣偵測）</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 12px; flex-shrink: 0;">
+        <button type="button" class="btn" onclick="closeGameConfigModal()">取消返回</button>
+        <button type="button" class="btn btn-primary" id="gameLaunchBtn" style="min-width: 220px; justify-content: center;" onclick="launchGame()">🚀 開始遊戲</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Custom Game Manager -->
+  <div class="modal-overlay" id="customGameModal">
+    <div class="modal-card" style="max-width: 650px;">
+      <div class="modal-header">
+        <h3>自訂小遊戲管理中心</h3>
+        <button class="close-btn" onclick="closeModal('customGameModal')">&times;</button>
+      </div>
+      <div style="margin-bottom: 14px;">
+        <button class="btn btn-primary" onclick="openCustomGameWizard()">＋ 建立全新自訂小遊戲</button>
+      </div>
+      <div id="customGameList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Custom Game 3-Step Wizard -->
+  <div class="modal-overlay" id="wizardModal">
+    <div class="modal-card tall-modal" style="max-width: 1050px;">
+      <div class="modal-header">
+        <h3 id="wizardTitle">自訂小遊戲精靈 (步驟 1 / 3)</h3>
+        <button class="close-btn" onclick="closeWizard()">&times;</button>
+      </div>
+
+      <!-- Step 1: Basic Config -->
+      <div id="wizardStep1" class="tall-step-container">
+        <div style="flex: 1; overflow-y: auto; padding-right: 4px;">
+          <div class="form-group">
+            <label>遊戲名稱 (若未填寫將自動命名為：照片回憶錄 yyyy/mm/dd 流水號)</label>
+            <input type="text" id="wGameTitle" placeholder="照片回憶錄 2026/09/25 1">
+          </div>
+          <div class="form-group">
+            <label>遊戲玩法模式</label>
+            <select id="wGameType" onchange="toggleWizardScoreField()">
+              <option value="casual">純休閒模式 (無失敗懲罰)</option>
+              <option value="challenge">挑戰模式 (計時階梯加分，歸零淘汰)</option>
+            </select>
+          </div>
+          <div class="form-group" id="wBaseScoreGroup" style="display: none;">
+            <label>挑戰模式初始底分</label>
+            <input type="number" id="wBaseScore" value="80" min="20" max="500">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; margin-top: 12px; flex-shrink: 0;">
+          <button class="btn btn-primary" onclick="goToWizardStep(2)">下一步：批次挑選題庫照片 ➔</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Batch Selection (Full Height Scroll) -->
+      <div id="wizardStep2" class="tall-step-container" style="display: none;">
+        <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; flex-shrink: 0;">
+          <button type="button" id="btnWizRegion" class="btn" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc; justify-content: space-between;" onclick="openSharedMsModal('wiz', 'region')">全部地區 ▼</button>
+          <button type="button" id="btnWizYear" class="btn" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc; justify-content: space-between;" onclick="openSharedMsModal('wiz', 'year')">全部年份 ▼</button>
+          <button type="button" id="btnWizMonth" class="btn" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc; justify-content: space-between;" onclick="openSharedMsModal('wiz', 'month')">全部月份 ▼</button>
+          <select id="wFilterFav" onchange="filterWizardPhotos()" style="flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ccc;">
+            <option value="all">全部照片</option>
+            <option value="fav">僅最愛照片 ❤️</option>
+          </select>
+        </div>
+        <div style="display: flex; gap: 10px; margin-bottom: 8px; flex-shrink: 0;">
+          <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="wizardSelectAll(true)">✓ 全部勾選</button>
+          <button class="btn" style="padding: 6px 12px; font-size: 12px;" onclick="wizardSelectAll(false)">✗ 取消全選</button>
+          <span id="wizardSelectedCount" style="align-self: center; font-size: 13px; font-weight: bold; color: var(--primary);">已勾選 0 張</span>
+        </div>
+        <div id="wizardSelectionList" class="tall-scroll-area" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); grid-auto-rows: max-content; gap: 10px;"></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 12px; flex-shrink: 0;">
+          <button class="btn" onclick="goToWizardStep(1)">⬅ 上一步</button>
+          <button class="btn btn-primary" onclick="goToWizardStep(3)">下一步：檢視所有題目與風格 ➔</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Review & Fast Style/Answer Assignment -->
+      <div id="wizardStep3" class="tall-step-container" style="display: none;">
+        <label style="font-weight: bold; margin-bottom: 6px; display: block; font-size: 13px; flex-shrink: 0;">
+          ⚡ 極速編輯模式（可按 Tab 鍵快速切換欄位：左為「正確答案」，右二為「干擾選項」）：
+        </label>
+        <div id="wizardReviewList" class="tall-scroll-area" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 12px; flex-shrink: 0;">
+          <button class="btn" onclick="goToWizardStep(2)">⬅ 上一步</button>
+          <button class="btn btn-primary" onclick="saveWizardCustomGame()">💾 儲存自訂小遊戲</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Settings & Export & Vector Label Debug -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>系統設定</h3>
+        <button class="close-btn" onclick="closeModal('settingsModal')">&times;</button>
+      </div>
+      <div class="form-group">
+        <label>預設地標符號風格 (新上傳照片將自動預設為此符號)</label>
+        <div style="display: flex; gap: 8px;">
+          <select id="defaultMarkerIcon" onchange="setDefaultMarker(this.value)" style="flex: 1;">
+            <option value="pin">紅色圓頭圖釘</option>
+            <option value="flag">紅色三角旗幟</option>
+            <option value="landmark">紅色地標符號</option>
+            <option value="heart">紅色愛心符號</option>
+          </select>
+          <button class="btn" style="font-size: 12px; padding: 8px 12px; white-space: nowrap;" onclick="applyDefaultMarkerToAllExisting()">套用至現有全部照片</button>
+        </div>
+      </div>
+
+      <!-- 地標顯示模式 -->
+	  <div class="form-group">
+        <label>地圖地標顯示模式 (收攏為集合 / 全部顯示)</label>
+        <select id="markerDisplayModeSelect" onchange="setMarkerDisplayMode(this.value)">
+          <option value="cluster">📦 地標圖案收攏為集合 (依縮放自動聚合)</option>
+          <option value="all" selected>📍 將地標全部顯示 (預設不收攏，展開所有地標圖案)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>25 區向量中心標籤與海面插圖檢視 (TopoJSON Debug)</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+          <button class="btn" onclick="toggleHitboxDebugOverlay()">切換顯示 25 區縣市名稱標籤</button>
+          <span id="debugOverlayStatus" style="font-size: 12px; color: #666;">目前狀態：隱藏</span>
+        </div>
+      </div>
+      <hr style="margin: 16px 0; border: none; border-top: 1px solid #eee;">
+      <div class="form-group">
+        <label>資料備份與還原 (低記憶體串流打包)</label>
+        <div style="display: flex; gap: 10px;">
+          <button class="btn" id="exportBtn" style="flex: 1; justify-content: center;" onclick="exportData()">📥 匯出完整資料 (JSON)</button>
+          <button class="btn" style="flex: 1; justify-content: center;" onclick="document.getElementById('importFile').click()">📤 匯入還原資料</button>
+          <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importData(event)">
+        </div>
+      </div>
+      <div style="margin-top: 22px; display: flex; justify-content: flex-end;">
+        <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" onclick="confirmSettingsModal()">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Standard Game Play View -->
+  <div id="gameOverlay">
+    <div class="game-stats">
+      <span id="gameModeLabel">模式: 休閒</span>
+      <span id="gameProgress">題目: 1 / 10</span>
+      <span id="gameScore" style="display: none; color: var(--gold);">分數: 80</span>
+    </div>
+
+    <div class="game-viewport" id="gameViewport" style="position: relative;">
+      <img id="gameImg" src="" alt="Quiz Target">
+      <div class="circle-mark" id="circleMark"></div>
+      <div class="grid-block-wrap" id="gridBlockWrap" style="display: none;"></div>
+      <canvas id="scratchCanvas" style="display: none;"></canvas>
+      <div id="flashlightOverlay" style="display: none; position: absolute; inset: 0; z-index: 12; cursor: crosshair; touch-action: none;"></div>
+    </div>
+
+    <div style="text-align: center; margin-bottom: 6px;">
+      <h4 id="questionText" style="font-size: 16px; font-weight: 600;">請問這張照片是在何時或何處拍的？</h4>
+    </div>
+
+    <div class="options-grid" id="optionsGrid"></div>
+
+    <button class="btn" style="margin-top: 10px; background: rgba(255,255,255,0.2); color: #fff;" onclick="quitGame()">放棄並離開</button>
+  </div>
+
+  <!-- Challenge Failed 0-Score Black Screen Overlay -->
+  <div id="failOverlay">
+    <div class="fail-zero-score">0分</div>
+    <div class="fail-title-text">挑戰失敗</div>
+    <button class="fail-ack-btn" onclick="acknowledgeFailAndExit()">承認失敗</button>
+    <div class="fail-countdown-hint" id="failCountdownText">7 秒後自動返回地圖主畫面...</div>
+  </div>
+
+  <!-- Review Modal (Full Height 96vh for Fast Review) -->
+  <div class="modal-overlay" id="reviewModal">
+    <div class="modal-card tall-modal" style="max-width: 980px;">
+      <div class="modal-header">
+        <h3 id="reviewTitle">足跡回顧</h3>
+        <button class="close-btn" onclick="closeReviewModal()">&times;</button>
+      </div>
+      <p id="reviewScoreSummary" style="margin-bottom: 10px; font-weight: bold; flex-shrink: 0;"></p>
+      <div class="review-gallery" id="reviewGallery"></div>
+      <button class="btn btn-primary" style="width: 100%; margin-top: 12px; justify-content: center; flex-shrink: 0;" onclick="closeReviewModal()">完成</button>
+    </div>
+  </div>
+
+  <!-- Slideshow Overlay -->
+  <div id="slideshowOverlay">
+    <img id="slideshowImg" src="" alt="Slideshow">
+    <div class="slide-info" id="slideInfo"></div>
+    <button class="btn" style="position: absolute; top: 20px; right: 20px;" onclick="closeSlideshow()">關閉</button>
+  </div>
+
+  <!-- Dynamic Action Review Playback HUD -->
+  <div id="dynPlaybackHUD">
+    <div class="dyn-top-bar" id="dynTopBar" style="display: none;">
+      <span id="dynProgressText">🧭 行動態回顧進行中...</span>
+      <button class="dyn-stop-btn" onclick="stopDynamicReview()">⏹ 結束回顧</button>
+    </div>
+    <div class="dyn-banner-box" id="dynBannerBox">Ready~GO出發</div>
+    <div class="dyn-fullscreen-card" id="dynFullscreenCard">
+      <img id="dynFullscreenImg" src="" alt="Dynamic Review Photo">
+      <div class="dyn-fullscreen-caption" id="dynFullscreenCaption"></div>
+    </div>
+  </div>
+
+  <!-- 點擊地標小圖示展開之全螢幕照片燈箱 -->
+  <div id="photoLightboxOverlay" onclick="closePhotoLightbox()">
+    <img id="lightboxFullImg" src="" alt="Full View">
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+    <div class="lightbox-hint">💡 點擊畫面任意位置即可關閉照片</div>
+  </div>
+
+  <!-- Shared Multi-Select Modal (跨模組共用的複選視窗) -->
+  <div class="modal-overlay" id="sharedMsModal" style="z-index: 6000;">
+    <div class="modal-card" style="max-width: 320px; padding: 16px;">
+      <div class="modal-header">
+        <h3 id="sharedMsTitle" style="font-size: 16px;">選擇 (可複選)</h3>
+        <button class="close-btn" onclick="closeModal('sharedMsModal')">&times;</button>
+      </div>
+      <div id="sharedMsContent" style="display: flex; flex-direction: column; gap: 8px; max-height: 40vh; overflow-y: auto; margin-bottom: 14px;"></div>
+      <div style="display: flex; gap: 8px; justify-content: space-between;">
+        <button class="btn" style="flex: 1; padding: 6px;" onclick="sharedMsSelectAll(true)">全選</button>
+        <button class="btn" style="flex: 1; padding: 6px;" onclick="sharedMsSelectAll(false)">全不選</button>
+        <button class="btn btn-primary" style="flex: 1; padding: 6px;" onclick="sharedMsConfirm()">確定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Application Logic -->
+  <script src="app-core.js"></script>
+  <script src="app.js" defer></script>
+  <script src="game.js" defer></script>
+</body>
+</html>
